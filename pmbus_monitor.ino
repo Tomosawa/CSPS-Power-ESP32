@@ -62,12 +62,12 @@
 
 #pragma GCC diagnostic warning "-Wunused-variable"
 
-#define DIAGNOSTICS  1
+#define DIAGNOSTICS  0
 #define WEBSERVER    1
 #define JSON_STATUS  0
 #define UDP_DIAG     1
 #define OTA_ENABLE   1
-#define SET_CLOCK    1
+#define SET_CLOCK    0
 
 /*
  *
@@ -124,7 +124,7 @@ static const int blink_do = PC13, PSON_do = PB14, I2C_enable_do = PB15;
 
 #if defined(ARDUINO_ARCH_ESP32)
 
-#define LCD_DISPLAY       0 // 7 or 11
+#define LCD_DISPLAY       12 // 7 or 11
 // #define WS2812           25
 
 #include <WiFi.h>
@@ -145,7 +145,7 @@ static const int blink_do =  2, PSON_do =  5, I2C_enable_do = 15;
 
 #else
 
-#define LCD_DISPLAY      16
+#define LCD_DISPLAY      12
 
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
@@ -200,8 +200,8 @@ static WiFiUDP     udp;
 static WiFiServer  server(80);
 #endif
 
-#define WIFI_SSID     "ssid" 
-#define WIFI_PASSWORD "secret"
+#define WIFI_SSID     "CAOC-Air" 
+#define WIFI_PASSWORD "18915970009"
 // #define WIFI_CSS      "http://192.168.9.8/models/models.css"
 
 #if defined(ARDUINO_ARCH_ESP32)
@@ -269,7 +269,8 @@ const int display_address = 0x78;
 U8X8_SH1106_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 #elif LCD_DISPLAY == 12
 const int display_address = 0x78;
-U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(U8X8_PIN_NONE);
+U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);   // OLEDs without Reset of the Display
+//U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(U8X8_PIN_NONE);
 #elif LCD_DISPLAY == 16
 const int display_address = 0x78; // 0x3c?
 U8X8_SSD1306_64X48_ER_HW_I2C u8x8(U8X8_PIN_NONE);
@@ -355,9 +356,9 @@ void setup() {
   delay(100);
 
 #if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_RASPBERRY_PI_PICO_W)
-  psu.init(PSON_do,I2C_enable_do,OUTPUT_DIRECTION,0x58,&DebugSerial,&Wire1);
+  psu.init(PSON_do,I2C_enable_do,OUTPUT_DIRECTION,0x5F,&DebugSerial,&Wire1);
 #else
-  psu.init(PSON_do,I2C_enable_do,OUTPUT_DIRECTION,0x58,&DebugSerial);
+  psu.init(PSON_do,I2C_enable_do,OUTPUT_DIRECTION,0x5F,&DebugSerial);
 #endif
 
   yield();
@@ -629,7 +630,7 @@ struct tm         *local_tm;
       lcd.print(lcd_line_1);
     }
     
-#elif LCD_DISPLAY == 11
+#elif LCD_DISPLAY == 12
 
     switch (display_phase) {
 

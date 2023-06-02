@@ -96,16 +96,16 @@ int PMBus::init(int pson,int i2c_enable,short int direction,uint8_t address,Stre
 
   //
 
-  read_string(0x99,sizeof(mfr_id)       - 1,(uint8_t *) mfr_id);       delay(1);
-  read_string(0x9c,sizeof(mfr_location) - 1,(uint8_t *) mfr_location); delay(1);
-  read_string(0x9d,sizeof(mfr_date)     - 1,(uint8_t *) mfr_date);     delay(1);
-  read_string(0x9e,sizeof(mfr_serial)   - 1,(uint8_t *) mfr_serial);   delay(1);
+  // read_string(0x99,sizeof(mfr_id)       - 1,(uint8_t *) mfr_id);       delay(1);
+  // read_string(0x9c,sizeof(mfr_location) - 1,(uint8_t *) mfr_location); delay(1);
+  // read_string(0x9d,sizeof(mfr_date)     - 1,(uint8_t *) mfr_date);     delay(1);
+  // read_string(0x9e,sizeof(mfr_serial)   - 1,(uint8_t *) mfr_serial);   delay(1);
 
-  check_model();
+  //check_model();
 
   //
   
-  clear_faults();
+  //clear_faults();
 
 #if DIAGNOSTICS
 
@@ -242,10 +242,10 @@ int PMBus::scan() {
 
   //
 
-  if (mfr_model[0] == 0) {
+  // if (mfr_model[0] == 0) {
 
-    check_model();
-  }
+  //   check_model();
+  // }
 
   //
 
@@ -264,41 +264,32 @@ int PMBus::scan() {
   
   //
 
-  delay(1); read_linear(0x88,&V_in,90.0,264.0);
-  delay(1); read_linear(0x89,&I_in,0.0,16.0);
-  delay(1); read_linear(0x97,&W_in,0.0,750.0);
+  delay(1); read_linear(0x08,&V_in,90.0,264.0);
+  V_in = V_in / 32; 
 
-  delay(1); 
+  delay(1); read_linear(0x0a,&I_in,0.0,16.0);
+  I_in = I_in / 64;
+
+  delay(1); read_linear(0x0c,&W_in,0.0,750.0);
+
+
+  delay(1); read_linear(0x0e,&V_out,0.0,9999.0);
+  V_out = V_out / 256;
   
-  if (vout_scale) {
 
-    tmp_f = vout_scale * (float) read_word(0x8b);
+  delay(1); read_linear(0x10,&I_out,0.0,70.0);
+  I_out = I_out /64;
 
-    if (tmp_f < 16.0) {
+  delay(1); read_linear(0x12,&W_out,0.0,750.0);
+  
+  delay(1); read_linear(0x1a,&T[0],-10.0,100.0);
+  T[0] =  T[0] /64;
 
-      V_out = tmp_f;
-    }
-    
-  } else {
+  delay(1); read_linear(0x1c,&T[1],-10.0,100.0);
+  T[1] = T[1] / 64;
 
-    read_linear(0x8b,&V_out,0.0,9999.0);
-  }
-
-  delay(1); read_linear(0x8c,&I_out,0.0,70.0);
-
-  delay(1); read_linear(0x96,&W_out,0.0,750.0);
-
-  for (i = 0; i < temperatures; ++i) {
-
-    delay(1); read_linear(0x8d + i,&T[i],-10.0,100.0);
-  }
-
-  //
-
-  for (i = 0; i < fans; ++i) {
-
-    delay(1); read_linear(0x90 + i,&fan[i],0.0,3000.0);
-  }
+  delay(1); read_linear(0x1e,&fan[0],0.0,3000.0);
+  
 
   //
 
@@ -349,9 +340,11 @@ void PMBus::write_byte(uint8_t reg,uint8_t value) {
  */
 
 uint8_t PMBus::read_byte(uint8_t reg) {
-
+ byte regCS = ((0xFF - (reg + (pmbus_address << 1))) + 1) & 0xFF;
   I2C->beginTransmission(pmbus_address);
   I2C->write(reg);
+
+  I2C->write(regCS);
   I2C->endTransmission(false);
   
   I2C->requestFrom(pmbus_address,(uint8_t) 1,(uint8_t) true);
@@ -365,18 +358,21 @@ uint8_t PMBus::read_byte(uint8_t reg) {
 
 uint16_t PMBus::read_word(uint8_t reg) {
 
-  uint16_t value;
-
+  uint32_t value;
+  byte regCS = ((0xFF - (reg + (pmbus_address << 1))) + 1) & 0xFF;
   I2C->beginTransmission(pmbus_address);
   I2C->write(reg);
+  I2C->write(regCS);
   I2C->endTransmission(false);
   
   I2C->requestFrom(pmbus_address,(uint8_t) 2,(uint8_t) true);
 
   value  = I2C->read();
   value |= I2C->read() << 8;
+  //value |= I2C->read() << 16;
 
-  return value;
+ return value; 
+  // return value & 0x00FFFF;
 }
 
 /*
@@ -405,9 +401,12 @@ void PMBus::read_block(uint8_t reg,int bytes, uint8_t *buffer) {
 
   int i;
 
+  byte regCS = ((0xFF - (reg + (pmbus_address << 1))) + 1) & 0xFF;
   I2C->beginTransmission(pmbus_address);
   I2C->write(reg);
+  I2C->write(regCS);
   I2C->endTransmission(false);
+
   
   I2C->requestFrom(pmbus_address,(uint8_t) bytes,(uint8_t) true);
 
@@ -426,15 +425,19 @@ void PMBus::read_block(uint8_t reg,int bytes, uint8_t *buffer) {
 void PMBus::read_linear(uint8_t reg,float *value,float min_f,float max_f) {
 
   float    tmp_f;
-  uint16_t linear;
+  uint32_t linear;
 
   linear = read_word(reg);
   tmp_f  = linear2float(linear);
   
-  if ((tmp_f >= min_f)&&(tmp_f <= max_f)) {
+  // if ((tmp_f >= min_f)&&(tmp_f <= max_f)) {
 
-    *value = tmp_f;
-  }
+  //   *value = tmp_f;
+  // }
+
+  //*value =  tmp_f;
+  *value =  linear;
+   
 
 #if 0
 
