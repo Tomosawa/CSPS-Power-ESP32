@@ -98,7 +98,7 @@
 
 // Processor specific setup.
 
-#if defined(ARDUINO_BLUEPILL_F103C8) || defined(ARDUINO_BLUEPILL_F103CB) // STM32F1
+#if defined(ARDUINO_BLUEPILL_F103C8) || defined(ARDUINO_BLUEPILL_F103CB) // STM32F1 
 
 #define _STM32F103C
 
