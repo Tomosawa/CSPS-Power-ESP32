@@ -30,6 +30,9 @@ The OLED display uses a 4-pin I2C interface.
 
 ![ESP32 PS-2461-1H  128*64 OLED](convert.jpg)
 ![PS-2461-1H  ](LITEON-PS-2461-1H.jpg)
+![full](full.jpg)
+![top](top.jpg)
+![bottom](bottom.jpg)
 
 
 
