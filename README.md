@@ -2,9 +2,14 @@
 
 本程序使用Arduino开发，在 华为/光宝  PS-2461-1H-12C上调试通过
 
-##功能
-  1. 2个XT60主输出
-  2. 1个XT30辅助电源输出，永不停电，可以接光猫等不能断电的设备
+感谢【霜秋凛然FRPS】插拔服务器电源笼 
+https://oshwhub.com/frostautumn/re-cha-ba-csps-dian-yuan-bei-ban_copy
+
+感谢杭州的星星大佬，感谢BH4TDV，提供的技术支持
+
+## 功能
+  1. 2个XT60主输出 12V  共30A(具体功率不同的电源可能不一样)
+  2. 1个XT30辅助电源 12VSB  2.5A输出，永不停电，可以接光猫等不能断电的设备
   3. 1个4Pin 风扇接口，可以连接12v风扇
   4. 支持oled显示和web监控，通过网络控制电源开关
 
@@ -29,7 +34,7 @@ The OLED display uses a 4-pin I2C interface.
 
 
 
-
+arduino编译之前，需要安装 u8g2的库
 
 * Libraries
   * https://github.com/olikraus/u8g2
